@@ -8,17 +8,25 @@ require_once __DIR__ . '/../../../wp-load.php';
 require_once __DIR__ . '/vendor/google-api-php-client/vendor/autoload.php';
 require_once __DIR__ . '/config.php';
 
-$credentials = file_get_contents(__DIR__ . '/credentials.json.php');
-$credentials = preg_replace('~^\s*<[^>]*>\s*~', '', $credentials);
-$credentials = json_decode($credentials, true);
+$client_secrets = file_get_contents(__DIR__ . '/config/client_secrets.json.php');
+if (!$client_secrets)
+    die("Could not read config/client_secrets.json.php");
+
+$client_secrets = preg_replace('~^\<\?.*\?>\s*~', '', $client_secrets);
+
+$client_secrets = json_decode($client_secrets, true);
+if (!$client_secrets)
+    die("Could not decode config/client_secrets.json.php");
+
+$credentials = require 'config/authorization_token.php';
 
 if (empty($credentials)) {
     die("Failed to read credentials.\n");
 }
 
 $client = new Google_Client();
-$client->setAuthConfig($credentials);
-$client->setScopes(['https://www.googleapis.com/auth/analytics.readonly']);
+$client->setAuthConfig($client_secrets);
+$client->setAccessToken($credentials);
 
 $analytics = new Google_Service_AnalyticsReporting($client);
 
@@ -65,6 +73,10 @@ foreach ($report->getReports() as $report) {
 if (empty($post_views_count)) {
     echo "No posts?\n";
     exit;
+}
+
+if (posix_isatty(STDOUT)) {
+    print_r($post_views_count);
 }
 
 $wpdb->query("BEGIN");
