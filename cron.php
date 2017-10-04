@@ -80,11 +80,11 @@ if (posix_isatty(STDOUT)) {
 }
 
 $wpdb->query("BEGIN");
-$wpdb->query("DELETE FROM wp_postmeta WHERE meta_key = 'post_views_count'");
+$wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key = 'post_views_count'");
 
 foreach ($post_views_count as $post_id => $views) {
     $wpdb->query("
-        INSERT INTO wp_postmeta (post_id, meta_key, meta_value)
+        INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value)
         VALUES ({$post_id}, 'post_views_count', {$views})
     ");
 }
