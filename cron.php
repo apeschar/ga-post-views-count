@@ -6,27 +6,21 @@ if (PHP_SAPI != 'cli') {
 
 require_once __DIR__ . '/../../../wp-load.php';
 require_once __DIR__ . '/vendor/google-api-php-client/vendor/autoload.php';
-require_once __DIR__ . '/config.php';
 
-$client_secrets = file_get_contents(__DIR__ . '/config/client_secrets.json.php');
-if (!$client_secrets)
-    die("Could not read config/client_secrets.json.php");
+$config = require_once __DIR__ . '/config.php';
 
-$client_secrets = preg_replace('~^\<\?.*\?>\s*~', '', $client_secrets);
-
-$client_secrets = json_decode($client_secrets, true);
-if (!$client_secrets)
-    die("Could not decode config/client_secrets.json.php");
-
-$credentials = require 'config/authorization_token.php';
-
-if (empty($credentials)) {
-    die("Failed to read credentials.\n");
+if (empty($config['client_secrets'])) {
+    die("Client secrets missing.");
 }
 
 $client = new Google_Client();
-$client->setAuthConfig($client_secrets);
-$client->setAccessToken($credentials);
+
+$client->setAuthConfig($config['client_secrets']);
+$client->setScopes(['https://www.googleapis.com/auth/analytics.readonly']);
+
+if (!empty($config['authorization_token'])) {
+    $client->setAccessToken($config['authorization_token']);
+}
 
 $analytics = new Google_Service_AnalyticsReporting($client);
 
@@ -46,7 +40,7 @@ $sessions_order->setFieldName('ga:sessions');
 $sessions_order->setSortOrder('DESCENDING');
 
 $request = new Google_Service_AnalyticsReporting_ReportRequest();
-$request->setViewId($view_id);
+$request->setViewId($config['view_id']);
 $request->setDateRanges($dateRange);
 $request->setDimensions(array($path));
 $request->setMetrics(array($sessions));
@@ -91,6 +85,6 @@ foreach ($post_views_count as $post_id => $views) {
 
 $wpdb->query("COMMIT");
 
-if ($snitch) {
-    @file_get_contents($snitch);
+if ($config['snitch']) {
+    @file_get_contents($config['snitch']);
 }
