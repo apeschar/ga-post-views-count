@@ -1,7 +1,7 @@
 <?php
 
 if (PHP_SAPI != 'cli') {
-    die("This script must be run from the cli.\n");
+    throw new RuntimeException("This script must be run from the cli.");
 }
 
 require_once __DIR__ . '/../../../wp-load.php';
@@ -10,7 +10,7 @@ require_once __DIR__ . '/vendor/google-api-php-client/vendor/autoload.php';
 $config = require_once __DIR__ . '/config.php';
 
 if (empty($config['client_secrets'])) {
-    die("Client secrets missing.");
+    throw new RuntimeException("Client secrets missing.");
 }
 
 $client = new Google_Client();
@@ -65,8 +65,7 @@ foreach ($report->getReports() as $report) {
 }
 
 if (empty($post_views_count)) {
-    echo "No posts?\n";
-    exit;
+    throw new RuntimeException("No posts viewed during period");
 }
 
 if (posix_isatty(STDOUT)) {
@@ -84,7 +83,3 @@ foreach ($post_views_count as $post_id => $views) {
 }
 
 $wpdb->query("COMMIT");
-
-if ($config['snitch']) {
-    @file_get_contents($config['snitch']);
-}
